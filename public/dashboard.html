@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Green Assets Infra</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #647452;
+      --green-dark: #4e5c3e;
+      --orange:     #ed5d1e;
+      --orange-hover:#d45218;
+      --white:      #ffffff;
+      --gray-50:    #f8f8f6;
+      --gray-100:   #f0ede8;
+      --gray-300:   #c8c4bc;
+      --gray-500:   #888078;
+      --gray-800:   #2c2c2a;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ─────────────────────────────────────── */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-100);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    .nav-logo svg { width: 32px; height: 32px; }
+
+    .nav-menu {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-item {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-500);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-item:hover { background: var(--gray-50); color: var(--gray-800); }
+    .nav-item.active { background: var(--gray-100); color: var(--green); font-weight: 600; }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-user { font-size: 13px; color: var(--gray-500); }
+
+    .btn-logout {
+      padding: 8px 18px;
+      background: var(--gray-100);
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-800);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-logout:hover { background: var(--gray-300); }
+
+    /* ── MAIN ────────────────────────────────────── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .page-sub {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+
+    .btn-fetch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--orange);
+      color: var(--white);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-fetch:hover { background: var(--orange-hover); }
+    .btn-fetch:active { transform: scale(0.98); }
+    .btn-fetch:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-fetch svg {
+      width: 16px; height: 16px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── STATUS MESSAGES ─────────────────────────── */
+    .msg {
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .msg.error   { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: block; }
+    .msg.empty   { background: var(--gray-100); color: var(--gray-500); display: block; text-align: center; padding: 32px; }
+
+    /* ── RESULTS META ────────────────────────────── */
+    .results-meta {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* ── OPDRACHTEN LIJST ────────────────────────── */
+    .opdrachten-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .opdracht-card {
+      background: var(--white);
+      border: 1px solid var(--gray-100);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: box-shadow 0.15s;
+    }
+    .opdracht-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+
+    .opdracht-header {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr auto;
+      align-items: center;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .opdracht-col { min-width: 0; }
+
+    .col-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--gray-500);
+      margin-bottom: 4px;
+    }
+
+    .col-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-800);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .relevantie-score {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-800);
+    }
+
+    .expand-icon {
+      width: 28px; height: 28px;
+      background: var(--gray-50);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.2s;
+    }
+    .expand-icon svg {
+      width: 14px; height: 14px;
+      stroke: var(--gray-500); fill: none;
+      stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+      transition: transform 0.2s;
+    }
+    .opdracht-card.open .expand-icon svg { transform: rotate(180deg); }
+    .opdracht-card.open .expand-icon { background: var(--gray-100); }
+
+    /* ── EXPANDED DETAIL ─────────────────────────── */
+    .opdracht-detail {
+      display: none;
+      border-top: 1px solid var(--gray-100);
+      padding: 20px;
+      background: var(--gray-50);
+      gap: 20px;
+    }
+    .opdracht-card.open .opdracht-detail { display: grid; }
+
+    .opdracht-detail {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .detail-block { display: flex; flex-direction: column; gap: 6px; }
+
+    .detail-block.full { grid-column: 1 / -1; }
+
+    .detail-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--gray-500);
+    }
+
+    .detail-value {
+      font-size: 14px;
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    .detail-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .detail-link:hover { text-decoration: underline; }
+    .detail-link svg {
+      width: 14px; height: 14px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    /* ── RESPONSIVE ─────────────────────────────── */
+    @media (max-width: 700px) {
+      main { padding: 24px 16px; }
+      nav  { padding: 0 16px; }
+
+      .opdracht-header {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+      }
+      .expand-icon { grid-row: 1; grid-column: 2; justify-self: end; }
+      .relevantie-badge { grid-row: 2; }
+
+      .opdracht-detail { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/tenders">
+    Green Assets Infra
+  </a>
+  <div class="nav-menu">
+    <a href="/tenders" class="nav-item active">Tender Opdrachten</a>
+    <a href="/overige-opdrachten" class="nav-item">Overige Opdrachten</a>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser"></span>
+    <a href="/logout" class="btn-logout">Uitloggen</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div>
+      <div class="page-title">Tenders</div>
+      <div class="page-sub">De meest actuele tenderinformatie</div>
+    </div>
+    <button class="btn-fetch" id="btnFetch" onclick="fetchOpdrachten()">
+      <span class="spinner" id="spinner"></span>
+      <svg id="btnIcon" viewBox="0 0 24 24">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+      </svg>
+      Opdrachten Ophalen
+    </button>
+  </div>
+
+  <div class="msg" id="msgBox"></div>
+  <div class="results-meta" id="resultsMeta"></div>
+  <div class="opdrachten-list" id="opdrachtenList"></div>
+</main>
+
+<script>
+  // Show username
+  const params = new URLSearchParams(location.search);
+  const user = params.get('user');
+  if (user) document.getElementById('navUser').textContent = user;
+
+  function formatDate(raw) {
+    if (!raw) return '—';
+    // Handle ISO strings, DD-MM-YYYY, YYYY-MM-DD
+    const d = new Date(raw);
+    if (!isNaN(d)) {
+      return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    return raw;
+  }
+
+  function sortByDate(items) {
+    return [...items].sort((a, b) => {
+      const da = new Date(a['Publicatie Datum'] || a['publicatie_datum'] || 0);
+      const db = new Date(b['Publicatie Datum'] || b['publicatie_datum'] || 0);
+      return db - da;
+    });
+  }
+
+  // Flexible field accessor (handles different casing/spacing)
+  function field(obj, ...keys) {
+    for (const k of keys) {
+      // exact match
+      if (obj[k] !== undefined) return obj[k];
+      // case-insensitive match
+      const kl = k.toLowerCase();
+      for (const ok of Object.keys(obj)) {
+        if (ok.toLowerCase() === kl) return obj[ok];
+      }
+    }
+    return null;
+  }
+
+  function renderOpdrachten(items) {
+    const list = document.getElementById('opdrachtenList');
+    const meta = document.getElementById('resultsMeta');
+
+    list.innerHTML = '';
+    meta.style.display = 'block';
+    meta.textContent = `${items.length} opdracht${items.length !== 1 ? 'en' : ''} gevonden`;
+
+    if (items.length === 0) {
+      showMsg('Geen opdrachten gevonden.', 'empty');
+      return;
+    }
+
+    const sorted = sortByDate(items);
+
+    sorted.forEach((item, idx) => {
+      const titel       = field(item, 'Aanbestedingsnaam', 'Titel Opdracht', 'titel_opdracht', 'Titel') || '—';
+      const pubDatum    = formatDate(field(item, 'Publicatie Datum', 'publicatie_datum', 'PublicatieDatum'));
+      const sluitDatum  = formatDate(field(item, 'Sluitingsdatum', 'sluitings_datum', 'Sluitings Datum'));
+      const opdrachtgever = field(item, 'Opdrachtgever Naam', 'Naam Opdrachtgever', 'naam_opdrachtgever', 'Opdrachtgever', 'opdrachtgever') || '—';
+      const score       = field(item, 'Relevantie Score', 'relevantie_score', 'RelevantieScore', 'Relevantiescore') ?? '—';
+      const omschrijving = field(item, 'Opdrachtbeschrijving', 'opdracht_beschrijving', 'Beschrijving') || '—';
+      // CPV may have trailing whitespace in the key
+      const cpvRaw      = Object.entries(item).find(([k]) => k.trim().toUpperCase() === 'CPV');
+      const cpv         = cpvRaw ? cpvRaw[1] : (field(item, 'CPV Code', 'cpv_code') || '—');
+      const link        = field(item, 'Link - URL', 'Link', 'link_url', 'URL', 'url') || null;
+
+      const scoreDisplay = score !== null && score !== '—' ? String(score).replace('%', '').trim() : '—';
+
+      const card = document.createElement('div');
+      card.className = 'opdracht-card';
+      card.innerHTML = `
+        <div class="opdracht-header" onclick="toggleCard(this.parentElement)">
+          <div class="opdracht-col">
+            <div class="col-label">Titel Opdracht</div>
+            <div class="col-value" title="${titel}">${titel}</div>
+          </div>
+          <div class="opdracht-col">
+            <div class="col-label">Publicatiedatum</div>
+            <div class="col-value">${pubDatum}</div>
+          </div>
+          <div class="opdracht-col">
+            <div class="col-label">Opdrachtgever</div>
+            <div class="col-value" title="${opdrachtgever}">${opdrachtgever}</div>
+          </div>
+          <div class="opdracht-col">
+            <div class="col-label">Relevantie</div>
+            <div class="relevantie-score">${scoreDisplay}</div>
+          </div>
+          <div class="opdracht-col">
+            <div class="col-label">Sluitingsdatum</div>
+            <div class="col-value">${sluitDatum}</div>
+          </div>
+          <div class="expand-icon">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="opdracht-detail">
+          <div class="detail-block full">
+            <div class="detail-label">Opdrachtbeschrijving</div>
+            <div class="detail-value">${omschrijving}</div>
+          </div>
+          <div class="detail-block">
+            <div class="detail-label">CPV Code</div>
+            <div class="detail-value">${cpv}</div>
+          </div>
+          ${link ? `
+          <div class="detail-block">
+            <div class="detail-label">Link</div>
+            <a class="detail-link" href="${link}" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Bekijk aanbesteding
+            </a>
+          </div>` : ''}
+        </div>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  function toggleCard(card) {
+    card.classList.toggle('open');
+  }
+
+  function showMsg(text, type) {
+    const box = document.getElementById('msgBox');
+    box.textContent = text;
+    box.className = `msg ${type}`;
+  }
+
+  function clearMsg() {
+    const box = document.getElementById('msgBox');
+    box.className = 'msg';
+  }
+
+  async function fetchOpdrachten() {
+    const btn     = document.getElementById('btnFetch');
+    const spinner = document.getElementById('spinner');
+    const icon    = document.getElementById('btnIcon');
+    const list    = document.getElementById('opdrachtenList');
+    const meta    = document.getElementById('resultsMeta');
+
+    btn.disabled   = true;
+    spinner.style.display = 'block';
+    icon.style.display    = 'none';
+    clearMsg();
+    list.innerHTML = '';
+    meta.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/opdrachten');
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMsg(data.error || 'Er is een fout opgetreden bij het ophalen van opdrachten.', 'error');
+        return;
+      }
+
+      renderOpdrachten(Array.isArray(data) ? data : [data]);
+    } catch (err) {
+      showMsg('Verbindingsfout: kon de server niet bereiken.', 'error');
+    } finally {
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      icon.style.display    = 'block';
+    }
+  }
+</script>
+</body>
+</html>
