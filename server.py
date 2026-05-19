@@ -15,10 +15,22 @@ WEBHOOK_OVERIG  = os.getenv("WEBHOOK_OVERIG",  "https://partou.app.n8n.cloud/web
 app = Flask(__name__, static_folder="public")
 app.secret_key = os.getenv("SESSION_SECRET", "change_this_secret")
 
-# Load users from config/users.json (server-side only, never exposed to browser)
+# Load users: from config/users.json if available, otherwise from environment variables
 USERS_FILE = os.path.join(os.path.dirname(__file__), "config", "users.json")
-with open(USERS_FILE, "r") as f:
-    USERS = {u["username"]: u["password"] for u in json.load(f)}
+if os.path.exists(USERS_FILE):
+    with open(USERS_FILE, "r") as f:
+        USERS = {u["username"]: u["password"] for u in json.load(f)}
+else:
+    # Fallback for Vercel: read from environment variables
+    USERS = {}
+    for i in range(1, 10):
+        u = os.getenv(f"USER_{i}_EMAIL")
+        p = os.getenv(f"USER_{i}_PASSWORD")
+        if u and p:
+            USERS[u] = p
+    # Also support single user via APP_USERNAME / APP_PASSWORD
+    if os.getenv("APP_USERNAME"):
+        USERS[os.getenv("APP_USERNAME")] = os.getenv("APP_PASSWORD")
 
 
 def logged_in():
