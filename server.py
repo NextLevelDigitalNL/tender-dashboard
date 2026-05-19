@@ -12,7 +12,10 @@ WEBHOOK_TOKEN   = os.getenv("APP_PASSWORD")
 WEBHOOK_TENDERS = os.getenv("WEBHOOK_TENDERS", "https://partou.app.n8n.cloud/webhook/03a8a398-4616-4dad-9e1d-e94c9303d529")
 WEBHOOK_OVERIG  = os.getenv("WEBHOOK_OVERIG",  "https://partou.app.n8n.cloud/webhook/13d888d9-ee00-484a-9ee9-ebb6d5402291")
 
-app = Flask(__name__, static_folder="public")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PUBLIC_DIR = os.path.join(BASE_DIR, "public")
+
+app = Flask(__name__, static_folder=PUBLIC_DIR)
 app.secret_key = os.getenv("SESSION_SECRET", "change_this_secret")
 
 # Load users: from config/users.json if available, otherwise from environment variables
@@ -61,7 +64,7 @@ def index():
 def login_page():
     if logged_in():
         return redirect(url_for("tenders"))
-    return send_from_directory("public", "login.html")
+    return send_from_directory(PUBLIC_DIR, "login.html")
 
 
 @app.route("/login", methods=["POST"])
@@ -80,14 +83,14 @@ def login():
 def tenders():
     if not logged_in():
         return redirect(url_for("login_page"))
-    return send_from_directory("public", "dashboard.html")
+    return send_from_directory(PUBLIC_DIR, "dashboard.html")
 
 
 @app.route("/overige-opdrachten")
 def overige_opdrachten():
     if not logged_in():
         return redirect(url_for("login_page"))
-    return send_from_directory("public", "overige-opdrachten.html")
+    return send_from_directory(PUBLIC_DIR, "overige-opdrachten.html")
 
 
 @app.route("/api/opdrachten")
@@ -122,7 +125,7 @@ def logout():
 
 @app.route("/public/<path:filename>")
 def static_files(filename):
-    return send_from_directory("public", filename)
+    return send_from_directory(PUBLIC_DIR, filename)
 
 
 if __name__ == "__main__":
