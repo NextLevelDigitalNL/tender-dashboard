@@ -28,9 +28,23 @@ def fetch_webhook(url):
 
 def serve_html(filename):
     filepath = os.path.join(PUBLIC_DIR, filename)
-    with open(filepath, "r", encoding="utf-8") as f:
-        content = f.read()
-    return content, 200, {"Content-Type": "text/html; charset=utf-8"}
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            content = f.read()
+        return content, 200, {"Content-Type": "text/html; charset=utf-8"}
+    except Exception as e:
+        debug_info = (
+            f"FOUT: {e}\n"
+            f"__file__: {__file__}\n"
+            f"BASE_DIR: {BASE_DIR}\n"
+            f"PUBLIC_DIR: {PUBLIC_DIR}\n"
+            f"CWD: {os.getcwd()}\n"
+        )
+        try:
+            debug_info += f"Inhoud BASE_DIR: {os.listdir(BASE_DIR)}\n"
+        except Exception as e2:
+            debug_info += f"Kan BASE_DIR niet lezen: {e2}\n"
+        return debug_info, 500, {"Content-Type": "text/plain"}
 
 
 @app.route("/")
