@@ -2,16 +2,19 @@
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": ["public/**"]
-      }
+      "use": "@vercel/python"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
-    }
+    { "src": "/api/opdrachten", "dest": "api/index.py" },
+    { "src": "/api/overige-opdrachten", "dest": "api/index.py" },
+    { "src": "/", "dest": "public/dashboard.html" },
+    { "src": "/dashboard", "dest": "public/dashboard.html" },
+    { "src": "/tenders", "dest": "public/dashboard.html" },
+    { "src": "/overige-opdrachten", "dest": "public/overige-opdrachten.html" }
   ]
 }
